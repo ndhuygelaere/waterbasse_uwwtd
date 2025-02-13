@@ -1,0 +1,558 @@
+Option Compare Database
+Option Explicit
+
+' Variables globales
+Const EXPORT_FILE As String = "C:\Temp\DumpStructure.txt"
+
+Function WaterBaseMenu()
+    DoCmd.OpenForm "WaterBaseMenuForm"
+End Function
+
+
+Sub createUWWTD_Art17_Structure()
+    Debug.Print "aaaa"
+End Sub
+
+Sub ExportUWWTD_Art17_DataToXLSX()
+    Debug.Print "Export"
+End Sub
+
+
+Sub aaa_export()
+    Debug.Print "start export"
+    'ExportStructure
+    'ExportTableData "Reference-country"
+    'ExportTableData "Ref-list-agglo"
+    Debug.Print "fin"
+End Sub
+
+
+
+Sub aaa_import()
+    Debug.Print "start import"
+    Debug.Print Application.CurrentDb.Name
+    'Modification de la strucre de la base cible
+    '= Ajouter la colonne "cc" de type texte de 2 caractères à la table "test"
+    'CurrentDb.Execute "ALTER TABLE T_Art17_FLAAgglomeration ADD COLUMN cc TEXT(2);"
+    'CurrentDb.Execute "ALTER TABLE T_Art17_FLAUWWTP ADD COLUMN cc TEXT(2);"
+    'CurrentDb.Execute "ALTER TABLE T_Art17_Investments ADD COLUMN cc TEXT(2);"
+    'CurrentDb.Execute "ALTER TABLE T_UWWTPS ADD COLUMN cc TEXT(2);"
+    
+    '= Mettre à jour la colonne "cc" avec les 2 premiers caractères en minuscule de la colonne "code"
+    'CurrentDb.Execute "UPDATE T_Art17_FLAAgglomeration SET cc = LCase(Left(aggCode, 2));"
+    'CurrentDb.Execute "UPDATE T_Art17_FLAUWWTP SET cc = LCase(Left(flarepCode, 2));"
+    'CurrentDb.Execute "UPDATE T_Art17_Investments SET cc = LCase(Left(soecCode, 2));"
+    'CurrentDb.Execute "UPDATE T_UWWTPS SET cc = LCase(Left(rptMStateKey, 2));"
+    
+    
+    'Supprimer toutes les données importées
+    'SupprimerImportationsDepuisFichierAvecSQL cheminFichier:=EXPORT_FILE
+    'ImportStructure cheminFichier:=EXPORT_FILE
+    ImportTableData cheminFichier:="C:\Temp\Reference-country_data.csv", nomTable:="Reference-country"
+    
+    
+    'Force the refresh of the navigation pane
+    Application.CurrentDb.TableDefs.Refresh
+    Application.RefreshDatabaseWindow
+    
+    Debug.Print "fin"
+    
+End Sub
+
+Sub aaa_removeImport()
+    Debug.Print "start remove"
+    Debug.Print Application.CurrentDb.Name
+
+    
+    'Supprimer toutes les données importées
+    SupprimerImportationsDepuisFichierAvecSQL cheminFichier:=EXPORT_FILE
+    
+    'Delete cc column
+    'CurrentDb.Execute "ALTER TABLE T_Art17_FLAAgglomeration DROP COLUMN cc;"
+    'CurrentDb.Execute "ALTER TABLE T_Art17_FLAUWWTP DROP COLUMN cc;"
+    'CurrentDb.Execute "ALTER TABLE T_Art17_Investments DROP COLUMN cc;"
+    
+    
+    'Force the refresh of the navigation pane
+    Application.CurrentDb.TableDefs.Refresh
+    Application.RefreshDatabaseWindow
+    
+    Debug.Print "fin"
+    
+End Sub
+
+Public Sub ExportStructure()
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim fld As DAO.Field
+    Dim idx As DAO.Index
+    Dim fso As Object
+    Dim txtStream As Object
+    Dim isPrimaryKey As Boolean
+    Dim primaryKeyField As String
+    
+    Set db = CurrentDb
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set txtStream = fso.CreateTextFile(EXPORT_FILE, True)
+    
+    ' Exporter la structure des tables
+    txtStream.WriteLine "[Tables]"
+    For Each tdf In db.TableDefs
+        If Left(tdf.Name, 4) <> "MSys" Then ' Ignorer les tables système
+            txtStream.WriteLine "TABLE: " & tdf.Name
+            
+            ' Trouver la clé primaire
+            primaryKeyField = ""
+            For Each idx In tdf.Indexes
+                If idx.Primary Then
+                    If idx.Fields.Count > 0 Then
+                        primaryKeyField = idx.Fields(0).Name
+                    End If
+                End If
+            Next idx
+            
+            ' Exporter les champs
+            For Each fld In tdf.Fields
+                isPrimaryKey = (fld.Name = primaryKeyField)
+                txtStream.WriteLine "  CHAMP: " & fld.Name & " | TYPE: " & FieldTypeToString(fld.Type) & " | Taille: " & fld.Size & IIf(isPrimaryKey, " | PRIMARY KEY", "")
+            Next fld
+        End If
+    Next tdf
+    
+    ' Exporter les requêtes
+    txtStream.WriteLine vbCrLf & "[Requêtes]"
+    Dim qdf As DAO.QueryDef
+    For Each qdf In db.QueryDefs
+        txtStream.WriteLine "REQUETE: " & qdf.Name & " - SQL: " & qdf.sql
+    Next qdf
+    
+    txtStream.Close
+    MsgBox "Exportation terminée vers " & EXPORT_FILE, vbInformation
+End Sub
+
+' Fonction pour convertir les types de champ Access en texte lisible
+Function FieldTypeToString(fieldType As Integer) As String
+    Select Case fieldType
+        Case dbBoolean: FieldTypeToString = "Boolean"
+        Case dbByte: FieldTypeToString = "Byte"
+        Case dbInteger: FieldTypeToString = "Integer"
+        Case dbLong: FieldTypeToString = "Long"
+        Case dbCurrency: FieldTypeToString = "Currency"
+        Case dbSingle: FieldTypeToString = "Single"
+        Case dbDouble: FieldTypeToString = "Double"
+        Case dbDate: FieldTypeToString = "Date/Time"
+        Case dbText: FieldTypeToString = "Text"
+        Case dbLongBinary: FieldTypeToString = "OLE Object"
+        Case dbMemo: FieldTypeToString = "Memo"
+        Case dbGUID: FieldTypeToString = "GUID"
+        Case Else: FieldTypeToString = "Unknown"
+    End Select
+End Function
+
+
+Public Sub ImportStructure(cheminFichier As String, Optional nomBase As String)
+    Dim db As DAO.Database
+    Dim fso As Object
+    Dim txtStream As Object
+    Dim ligne As String
+    Dim ModeTables As Boolean
+    Dim ModeRequetes As Boolean
+    Dim tdf As DAO.TableDef
+    Dim fld As DAO.Field
+    Dim idx As DAO.Index
+    Dim nomTable As String
+    Dim primaryKey As String
+    
+    ' Ouvrir la nouvelle base
+    If nomBase <> "" Then
+        Set db = OpenDatabase(nomBase)
+    Else
+        Set db = Application.CurrentDb
+    End If
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set txtStream = fso.OpenTextFile(cheminFichier, 1)
+    
+    ModeTables = False
+    ModeRequetes = False
+    nomTable = ""
+    primaryKey = ""
+
+    ' Lire le fichier ligne par ligne
+    Do While Not txtStream.AtEndOfStream
+        ligne = Trim(txtStream.ReadLine)
+        
+        ' Détecter les sections
+        If ligne = "[Tables]" Then
+            ModeTables = True
+            ModeRequetes = False
+            Debug.Print "= Import des tables"
+        ElseIf ligne = "[Requêtes]" Then
+            ModeTables = False
+            ModeRequetes = True
+            Debug.Print "= Import des requêtes"
+        ElseIf ModeTables And Left(ligne, 6) = "TABLE:" Then
+            ' Nouvelle table
+            nomTable = Trim(Mid(ligne, 7))
+            If Not ObjetExiste(db, nomTable, True) Then
+                Set tdf = db.CreateTableDef(nomTable)
+            End If
+            primaryKey = "" ' Réinitialiser la clé primaire
+        ElseIf ModeTables And Left(ligne, 7) = "CHAMP: " Then
+            If Not ObjetExiste(db, nomTable, True) Then
+                ' Lire le champ et son type
+                Dim champInfos As Variant
+                champInfos = Split(ligne, "|")
+                Dim champNom As String, champType As String, champTaille As Integer
+                
+                champNom = Trim(Split(champInfos(0), ":")(1))
+                champType = Trim(Split(champInfos(1), ":")(1))
+                champTaille = val(Trim(Split(champInfos(2), ":")(1)))
+                
+                ' Vérifier si c'est la clé primaire
+                If UBound(champInfos) >= 3 Then
+                    If InStr(champInfos(3), "PRIMARY KEY") > 0 Then
+                        primaryKey = champNom
+                    End If
+                End If
+                
+                ' Ajouter le champ à la table
+                Set fld = tdf.CreateField(champNom, StringToFieldType(champType), champTaille)
+                tdf.Fields.Append fld
+            End If
+        ElseIf ModeTables And nomTable <> "" And ligne = "" Then
+            If Not ObjetExiste(db, nomTable, True) Then
+                ' Ajouter la table à la base
+                db.TableDefs.Append tdf
+                
+                ' Ajouter la clé primaire si définie
+                If primaryKey <> "" Then
+                    Set idx = tdf.CreateIndex("PrimaryKey")
+                    idx.Primary = True
+                    idx.Fields.Append idx.CreateField(primaryKey)
+                    tdf.Indexes.Append idx
+                    
+                End If
+                Debug.Print "=== Table : " & nomTable & " importée"
+            Else
+                Debug.Print "=== Table : " & nomTable & " déjà existante"
+            End If
+            nomTable = ""
+        ElseIf ModeRequetes And Left(ligne, 8) = "REQUETE:" Then
+            ' Recréer la requête
+            Dim nomRequete As String, sqlRequete As String
+            Dim posSQL As Integer
+            posSQL = InStr(ligne, " - SQL: ")
+            If posSQL > 0 Then
+                nomRequete = Trim(Mid(ligne, 9, posSQL - 9))
+                sqlRequete = Trim(Mid(ligne, posSQL + 8))
+                
+            End If
+        ElseIf ModeRequetes And nomRequete <> "" And ligne <> "" Then
+            sqlRequete = sqlRequete & " " & ligne
+        ElseIf ModeRequetes And nomRequete <> "" And ligne = "" Then
+            If Not ObjetExiste(db, nomRequete, False) Then
+                db.CreateQueryDef nomRequete, sqlRequete
+                Debug.Print "=== Requête : " & nomRequete & " importée"
+            Else
+                Debug.Print "=== Requête : " & nomRequete & " déjà existante"
+            End If
+            nomRequete = ""
+            sqlRequete = ""
+        End If
+    Loop
+    
+    txtStream.Close
+    'db.Close 'keep the db open
+    
+    Debug.Print "Importation terminée dans " & db.Name
+End Sub
+
+
+
+
+
+Function ObjetExiste(db As DAO.Database, nomObjet As String, estTable As Boolean) As Boolean
+    Dim obj As Object
+    On Error Resume Next
+    
+    If estTable Then
+        Set obj = db.TableDefs(nomObjet)
+    Else
+        Set obj = db.QueryDefs(nomObjet)
+    End If
+    
+    ObjetExiste = (Err.Number = 0)
+    Err.Clear
+    Set obj = Nothing
+End Function
+
+
+
+' Fonction pour convertir un type de champ texte en type Access
+Function StringToFieldType(champType As String) As Integer
+    Select Case champType
+        Case "Boolean": StringToFieldType = dbBoolean
+        Case "Byte": StringToFieldType = dbByte
+        Case "Integer": StringToFieldType = dbInteger
+        Case "Long": StringToFieldType = dbLong
+        Case "Currency": StringToFieldType = dbCurrency
+        Case "Single": StringToFieldType = dbSingle
+        Case "Double": StringToFieldType = dbDouble
+        Case "Date/Time": StringToFieldType = dbDate
+        Case "Text": StringToFieldType = dbText
+        Case "OLE Object": StringToFieldType = dbLongBinary
+        Case "Memo": StringToFieldType = dbMemo
+        Case "GUID": StringToFieldType = dbGUID
+        Case Else: StringToFieldType = dbText ' Valeur par défaut
+    End Select
+End Function
+
+
+Public Sub ExportTableData(nomTable As String, Optional cheminFichier As String = "")
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim i As Integer
+    Dim ligne As String
+    Dim flux As Object
+    
+    Set db = CurrentDb
+    Set rs = db.OpenRecordset(nomTable, dbOpenSnapshot)
+    
+    If rs.EOF Then
+        MsgBox "La table '" & nomTable & "' ne contient aucun enregistrement.", vbInformation
+        Exit Sub
+    End If
+    
+    ' Définir un chemin par défaut si non spécifié
+    If cheminFichier = "" Then cheminFichier = "C:\Temp\" & nomTable & "_data.csv"
+    
+    ' Créer un objet ADODB.Stream pour écrire en UTF-8
+    Set flux = CreateObject("ADODB.Stream")
+    flux.Type = 2 ' Type texte
+    flux.Charset = "UTF-8" ' Encodage UTF-8
+    flux.Open
+    
+    ' Écrire les noms des colonnes
+    For i = 0 To rs.Fields.Count - 1
+        ligne = ligne & rs.Fields(i).Name & IIf(i < rs.Fields.Count - 1, ";", "")
+    Next i
+    flux.WriteText ligne & vbCrLf
+    
+    ' Écrire les données
+    Do While Not rs.EOF
+        ligne = ""
+        For i = 0 To rs.Fields.Count - 1
+            Dim valeur As String
+            If IsNull(rs.Fields(i).Value) Then
+                valeur = "NULL"
+            ElseIf rs.Fields(i).Type = dbText Or rs.Fields(i).Type = dbMemo Then
+                valeur = """" & NettoyerTexte(rs.Fields(i).Value) & """"
+            Else
+                valeur = NettoyerTexte(rs.Fields(i).Value)
+            End If
+            ligne = ligne & valeur & IIf(i < rs.Fields.Count - 1, ";", "")
+        Next i
+        flux.WriteText ligne & vbCrLf
+        rs.MoveNext
+    Loop
+    
+    ' Sauvegarder le fichier avec l'encodage UTF-8
+    flux.SaveToFile cheminFichier, 2 ' Mode création/remplacement
+    
+    flux.Close
+    rs.Close
+    
+    MsgBox "Exportation de la table '" & nomTable & "' terminée en UTF-8 vers " & cheminFichier, vbInformation
+End Sub
+
+
+' Fonction pour nettoyer le texte (remplace les espaces insécables et supprime les caractères non imprimables)
+Function NettoyerTexte(texte As String) As String
+    Dim i As Integer
+    Dim char As String
+    Dim resultat As String
+    
+    resultat = texte
+    ' Remplacement des espaces insécables par des espaces normaux
+    resultat = Replace(resultat, Chr(160), Chr(32))
+    
+    ' Suppression des caractères invisibles (0 à 31 sauf Tab (9), CR (13), LF (10))
+    For i = 1 To Len(resultat)
+        char = Mid(resultat, i, 1)
+        If (Asc(char) >= 32 And Asc(char) < 127) Or Asc(char) = 9 Or Asc(char) = 10 Or Asc(char) = 13 Then
+            NettoyerTexte = NettoyerTexte & char
+        ElseIf Asc(char) >= 128 And Asc(char) <= 159 Then
+            ' Remplace les caractères de contrôle étendus par un espace
+            NettoyerTexte = NettoyerTexte & " "
+        End If
+    Next i
+End Function
+
+
+
+Public Sub ImportTableData(cheminFichier As String, nomTable As String, Optional cheminNouvelleBase As String)
+    Dim dbSource As DAO.Database
+    Dim dbDest As DAO.Database
+    Dim rsDest As DAO.Recordset
+    Dim flux As Object
+    Dim ligne As String
+    Dim valeurs As Variant
+    Dim val As String
+    Dim i As Integer
+    Dim nomsChamps As Variant
+    Dim sqlCreate As String
+    Dim existe As Boolean
+
+    ' Ouvrir la base source (nouvelle base Access)
+    If cheminNouvelleBase <> "" Then
+        Set dbDest = OpenDatabase(cheminNouvelleBase)
+    Else
+        Set dbDest = Application.CurrentDb
+    End If
+    
+    Debug.Print "== Import dans " & nomTable
+    
+    ' Vérifier si la table existe dans la nouvelle base
+    existe = False
+    On Error Resume Next
+    Dim rsTest As DAO.Recordset
+    Set rsTest = dbDest.OpenRecordset(nomTable, dbOpenDynaset)
+    If Err.Number = 0 Then existe = True
+    On Error GoTo 0
+
+    ' Lire le fichier CSV en UTF-8
+    Set flux = CreateObject("ADODB.Stream")
+    flux.Type = 2 ' Mode texte
+    flux.Charset = "UTF-8" ' Encodage UTF-8
+    flux.Open
+    flux.LoadFromFile cheminFichier
+
+    ' Lire la première ligne (noms des colonnes)
+    ligne = flux.ReadText(-2)
+    nomsChamps = Split(ligne, ";")
+
+    ' Si la table n'existe pas, la créer dynamiquement
+    If Not existe Then
+        sqlCreate = "CREATE TABLE " & nomTable & " ("
+        For i = 0 To UBound(nomsChamps)
+            sqlCreate = sqlCreate & "[" & nomsChamps(i) & "] TEXT,"
+        Next i
+        sqlCreate = Left(sqlCreate, Len(sqlCreate) - 1) & ");" ' Supprime la dernière virgule et ferme la requête
+        dbDest.Execute sqlCreate
+    End If
+
+    ' Ouvrir la table destination
+    Set rsDest = dbDest.OpenRecordset(nomTable, dbOpenDynaset)
+
+    ' Lire les données et insérer dans la nouvelle base
+    Do While Not flux.EOS
+        ligne = flux.ReadText(-2)
+        If Trim(ligne) <> "" Then ' Ignorer les lignes vides
+            valeurs = Split(ligne, ";")
+            rsDest.AddNew
+            For i = 0 To UBound(nomsChamps)
+                If i <= UBound(valeurs) Then
+                    val = valeurs(i)
+                    val = NettoyerTexte(val)
+                    val = Replace(val, """", "")
+                    rsDest(nomsChamps(i)).Value = IIf(val = "NULL", Null, val)
+                End If
+            Next i
+            rsDest.Update
+        End If
+    Loop
+
+    ' Fermer tout
+    rsDest.Close
+    'dbDest.Close
+    flux.Close
+
+    Debug.Print "Importation réussie de '" & cheminFichier & "' dans '" & dbDest.Name & "' (Table: " & nomTable & ")"
+End Sub
+
+Public Sub SupprimerImportationsDepuisFichierAvecSQL(cheminFichier As String, Optional nomBase As String)
+    Dim db As DAO.Database
+    Dim flux As Object
+    Dim ligne As String
+    Dim tables As Collection
+    Dim requetes As Collection
+    Dim nomObjet As String
+    Dim i As Integer
+    Dim nomRequete As String
+
+    ' Ouvrir la base Access
+    If nomBase <> "" Then
+        Set db = OpenDatabase(nomBase)
+    Else
+        Set db = Application.CurrentDb
+    End If
+    ' Initialiser les collections pour stocker les noms de tables et requêtes
+    Set tables = New Collection
+    Set requetes = New Collection
+
+    ' Lire le fichier d'importation (UTF-8)
+    Set flux = CreateObject("ADODB.Stream")
+    flux.Type = 2 ' Mode texte
+    flux.Charset = "UTF-8" ' Encodage UTF-8
+    flux.Open
+    flux.LoadFromFile cheminFichier
+
+    ' Parcourir le fichier ligne par ligne
+    Do While Not flux.EOS
+        ligne = Trim(flux.ReadText(-2))
+        
+        ' Identifier les tables
+        If ligne Like "TABLE:*" Then
+            tables.Add Mid(ligne, 7) ' Extrait le nom après "TABLE:"
+        End If
+        
+        ' Identifier les requêtes
+        If ligne Like "REQUETE:*" Then
+            ' Extraire uniquement le nom de la requête avant " - SQL:"
+            nomRequete = Mid(ligne, 9, InStr(ligne, " - SQL:") - 9)
+            requetes.Add nomRequete
+        End If
+    Loop
+
+    ' Fermer le fichier
+    flux.Close
+
+    ' Supprimer les tables
+    On Error Resume Next
+    For i = 1 To tables.Count
+        nomObjet = Trim(tables(i))
+        db.Execute "DROP TABLE [" & nomObjet & "];", dbFailOnError
+        If Err.Number = 0 Then
+            Debug.Print "Table supprimée : " & nomObjet
+        Else
+            Debug.Print "Impossible de supprimer la table : " & nomObjet & " - " & Err.Description
+            Err.Clear
+        End If
+    Next i
+    On Error GoTo 0
+
+    ' Supprimer les requêtes
+    On Error Resume Next
+    For i = 1 To requetes.Count
+        nomObjet = Trim(requetes(i))
+        db.QueryDefs.Delete nomObjet
+        If Err.Number = 0 Then
+            Debug.Print "Requête supprimée : " & nomObjet
+        Else
+            Debug.Print "Impossible de supprimer la requête : " & nomObjet & " - " & Err.Description
+            Err.Clear
+        End If
+    Next i
+    On Error GoTo 0
+
+    ' Fermer la base
+    db.Close
+    Set db = Nothing
+
+    MsgBox "Suppression terminée des tables et requêtes listées dans '" & cheminFichier & "'.", vbInformation
+End Sub
+
+
+
+
+
