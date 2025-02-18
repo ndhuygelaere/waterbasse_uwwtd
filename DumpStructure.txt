@@ -78,7 +78,7 @@ ORDER BY [6-uww-capacity-b].cc;
 
 REQUETE: 7-agg-forecast-inv-a - SQL: SELECT [T_Art17_FLAAgglomeration].flaggStatus, [T_Art17_FLAAgglomeration].aggCode, [T_Art17_FLAAgglomeration].cc, [T_Art17_FLAAgglomeration].flaggInv, [T_Art17_FLAAgglomeration].flaggEUFund, [T_Art17_FLAAgglomeration].flaggExpecDateStartWork, [T_Art17_FLAAgglomeration].flaggExpecDateCompletion
 FROM T_Art17_FLAAgglomeration
-WHERE [T_Art17_FLAAgglomeration].flaggStatus <> "C" AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateStartWork) > 2024) OR ([T_Art17_FLAAgglomeration].flaggExpecDateCompletion Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateCompletion) > 2024));
+WHERE [T_Art17_FLAAgglomeration].flaggStatus <> "C" AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateStartWork) > 2023) OR ([T_Art17_FLAAgglomeration].flaggExpecDateCompletion Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateCompletion) > 2023));
 
 REQUETE: 7-agg-forecast-inv-b - SQL: SELECT [7-agg-forecast-inv-a].cc, Sum([7-agg-forecast-inv-a].flaggInv) AS SommeDeflaggInv, Sum([7-agg-forecast-inv-a].flaggEUFund) AS SommeDeflaggEUFund, Min(Year([flaggExpecDateCompletion])) AS Minyear, Max(Year([flaggExpecDateCompletion])) AS Maxyear, Min(Year([flaggExpecDateStartWork])) AS [Minyear-startw], Max(Year([flaggExpecDateStartWork])) AS [Maxyear-startw]
 FROM [7-agg-forecast-inv-a]
@@ -88,9 +88,9 @@ ORDER BY [7-agg-forecast-inv-a].cc;
 REQUETE: 7-agg-forecast-inv-c - SQL: SELECT [7-agg-forecast-inv-b].cc, [7-agg-forecast-inv-b].SommeDeflaggInv, [7-agg-forecast-inv-b].SommeDeflaggEUFund, [7-agg-forecast-inv-b].Minyear, [7-agg-forecast-inv-b].Maxyear, [7-agg-forecast-inv-b].[Minyear-startw], [7-agg-forecast-inv-b].[Maxyear-startw]
 FROM [7-agg-forecast-inv-b];
 
-REQUETE: 7-agg-forecast-inv-d - SQL: SELECT [Reference-country].cc, [7-agg-forecast-inv-c].SommeDeflaggInv, [7-agg-forecast-inv-c].SommeDeflaggEUFund, [7-agg-forecast-inv-c].Minyear, [7-agg-forecast-inv-c].Maxyear, [7-agg-forecast-inv-c].[Minyear-startw], [7-agg-forecast-inv-c].[Maxyear-startw]
+REQUETE: 7-agg-forecast-inv-d - SQL: SELECT [Reference-country].cc, [7-agg-forecast-inv-c].SommeDeflaggInv, [7-agg-forecast-inv-c].SommeDeflaggEUFund, [7-agg-forecast-inv-c].Minyear, [7-agg-forecast-inv-c].Maxyear, [7-agg-forecast-inv-c].Minyear & "-" & [7-agg-forecast-inv-c].Maxyear as years, [7-agg-forecast-inv-c].[Minyear-startw], [7-agg-forecast-inv-c].[Maxyear-startw]
 FROM [Reference-country] LEFT JOIN [7-agg-forecast-inv-c] ON [Reference-country].cc = [7-agg-forecast-inv-c].cc
-ORDER BY [Reference-country].country;
+ORDER BY [Reference-country].cc;
 
 REQUETE: 7-agg-load-a - SQL: SELECT [T_Art17_FLAAgglomeration].flaggStatus, [T_Art17_FLAAgglomeration].cc, [T_Art17_FLAAgglomeration].aggCode, [T_Agglomerations].aggGenerated, [T_Art17_FLAAgglomeration].flaggexploadias, [T_Art17_FLAAgglomeration].flaggexploadcoll, [T_Art17_FLAAgglomeration].flaggexpload, IIf([T_Art17_FLAAgglomeration]![flaggexpload]>0,[T_Art17_FLAAgglomeration]![flaggexpload],[T_Agglomerations]![aggGenerated]) AS load
 FROM T_Art17_FLAAgglomeration INNER JOIN [T_Agglomerations] ON ([T_Art17_FLAAgglomeration].aggCode = [T_Agglomerations].aggCode)
@@ -105,7 +105,7 @@ GROUP BY [7-agg-load-b].cc;
 
 REQUETE: 8-uww-forecast-inv-a - SQL: SELECT uww17.flatpStatus, uww17.cc, uww17.uwwCode, uww17.uwwName, uww17.flatpStatus, uww17.flatpExpecDatePerformance, uww17.flatpInv, uww17.flatpeufund
 FROM T_Art17_FLAUWWTP uww17
-WHERE uww17.flatpStatus <> "C" AND uww17.flatpExpecDatePerformance IS NOT NULL AND Year(uww17.flatpExpecDatePerformance) > 2024
+WHERE uww17.flatpStatus <> "C" AND uww17.flatpExpecDatePerformance IS NOT NULL AND Year(uww17.flatpExpecDatePerformance) > 2023
 ORDER BY uww17.flatpExpecDatePerformance
 
 REQUETE: 8-uww-forecast-inv-b - SQL: SELECT [8-uww-forecast-inv-a].cc, Sum([8-uww-forecast-inv-a].flatpInv) AS SommeDeflatpInv, Sum([8-uww-forecast-inv-a].flatpeufund) AS SommeDeflatpeufund, Min(Year([flatpExpecDatePerformance])) AS Minyear, Max(Year([flatpExpecDatePerformance])) AS Maxyear
@@ -116,9 +116,16 @@ ORDER BY  [8-uww-forecast-inv-a].cc;
 REQUETE: 8-uww-forecast-inv-c - SQL: SELECT [8-uww-forecast-inv-b].cc, [8-uww-forecast-inv-b].SommeDeflatpInv, [8-uww-forecast-inv-b].SommeDeflatpeufund, [8-uww-forecast-inv-b].Minyear, [8-uww-forecast-inv-b].Maxyear
 FROM [8-uww-forecast-inv-b];
 
-REQUETE: 8-uww-forecast-inv-d - SQL: SELECT [Reference-country].cc, [8-uww-forecast-inv-c].SommeDeflatpInv, [8-uww-forecast-inv-c].SommeDeflatpeufund, [8-uww-forecast-inv-c].Minyear, [8-uww-forecast-inv-c].Maxyear
+REQUETE: 8-uww-forecast-inv-d - SQL: SELECT [Reference-country].cc, [8-uww-forecast-inv-c].SommeDeflatpInv, [8-uww-forecast-inv-c].SommeDeflatpeufund, [8-uww-forecast-inv-c].Minyear, [8-uww-forecast-inv-c].Maxyear, [8-uww-forecast-inv-c].Minyear & "-" & [8-uww-forecast-inv-c].Maxyear as years
 FROM [Reference-country] LEFT JOIN [8-uww-forecast-inv-c] ON [Reference-country].cc = [8-uww-forecast-inv-c].cc
-ORDER BY [Reference-country].country;
+ORDER BY [Reference-country].cc;
+
+REQUETE: 8-forecast-inv-period - SQL: SELECT [7-agg-forecast-inv-d].cc,
+    iif([7-agg-forecast-inv-d].Minyear < [8-uww-forecast-inv-d].Minyear, [7-agg-forecast-inv-d].Minyear, [8-uww-forecast-inv-d].Minyear) as [Minyear],
+    iif([7-agg-forecast-inv-d].Maxyear > [8-uww-forecast-inv-d].Maxyear, [7-agg-forecast-inv-d].Maxyear, [8-uww-forecast-inv-d].Maxyear) as [Maxyear],
+    [Minyear] & " - " & [Maxyear] as period
+FROM [7-agg-forecast-inv-d]
+    LEFT JOIN [8-uww-forecast-inv-d] ON [7-agg-forecast-inv-d].cc = [8-uww-forecast-inv-d].cc
 
 REQUETE: 9-0-forecast-inv-collect-MSlevel-IAS-a - SQL: SELECT T_Art17_Investments.cc, Sum(T_Art17_Investments.soecInvIAS) AS soecInvIAS, T_Art17_Investments.soecPeriod, Min(T_Art17_Investments.soecStartYear) AS MinDesoecStartYear, Max(T_Art17_Investments.soecEndYear) AS MaxDesoecEndYear, Min(Year([soecStartYear])) AS [begin], Max(Year([soecEndYear])) AS [end]
 FROM T_Art17_Investments
@@ -126,9 +133,9 @@ GROUP BY T_Art17_Investments.cc, T_Art17_Investments.soecPeriod
 HAVING Sum(T_Art17_Investments.soecInvIAS) Is Not Null
 ORDER BY T_Art17_Investments.cc, T_Art17_Investments.soecPeriod;
 
-REQUETE: 9-0-forecast-inv-collect-MSlevel-IAS-b - SQL: SELECT [Reference-country].country, [Reference-country].cc, [9-0-forecast-inv-collect-MSlevel-IAS-a].soecPeriod, [9-0-forecast-inv-collect-MSlevel-IAS-a]![soecInvIAS]/([9-0-forecast-inv-collect-MSlevel-IAS-a]![end]-[9-0-forecast-inv-collect-MSlevel-IAS-a]![begin]+1) AS [Inv-IAS], [9-0-forecast-inv-collect-MSlevel-IAS-a].begin, [9-0-forecast-inv-collect-MSlevel-IAS-a].end
+REQUETE: 9-0-forecast-inv-collect-MSlevel-IAS-b - SQL: SELECT [Reference-country].cc, [9-0-forecast-inv-collect-MSlevel-IAS-a].soecPeriod, [9-0-forecast-inv-collect-MSlevel-IAS-a]![soecInvIAS]/([9-0-forecast-inv-collect-MSlevel-IAS-a]![end]-[9-0-forecast-inv-collect-MSlevel-IAS-a]![begin]+1) AS [Inv-IAS], [9-0-forecast-inv-collect-MSlevel-IAS-a].begin, [9-0-forecast-inv-collect-MSlevel-IAS-a].end
 FROM [9-0-forecast-inv-collect-MSlevel-IAS-a] RIGHT JOIN [Reference-country] ON [9-0-forecast-inv-collect-MSlevel-IAS-a].cc = [Reference-country].cc
-ORDER BY [Reference-country].country;
+ORDER BY [Reference-country].cc;
 
 REQUETE: 9-1-forecast-inv-collect-MSlevel-sewer-a - SQL: SELECT T_Art17_Investments.cc, T_Art17_Investments.soecinvcol, T_Art17_Investments.soecPeriod, T_Art17_Investments.soecStartYear, T_Art17_Investments.soecEndYear, IIf(Right([soecStartYear],12)>"-12-25T23:59",1,0) AS [start-correction]
 FROM T_Art17_Investments
@@ -140,36 +147,106 @@ FROM [9-1-forecast-inv-collect-MSlevel-sewer-a]
 GROUP BY [9-1-forecast-inv-collect-MSlevel-sewer-a].cc, [9-1-forecast-inv-collect-MSlevel-sewer-a].soecPeriod
 ORDER BY [9-1-forecast-inv-collect-MSlevel-sewer-a].cc, [9-1-forecast-inv-collect-MSlevel-sewer-a].soecPeriod;
 
-REQUETE: 9-1-forecast-inv-collect-MSlevel-sewer-c - SQL: SELECT [Reference-country].country, [9-1-forecast-inv-collect-MSlevel-sewer-b].soecPeriod, [9-1-forecast-inv-collect-MSlevel-sewer-b]![SommeDesoecinvcol]/([9-1-forecast-inv-collect-MSlevel-sewer-b]![end]-[9-1-forecast-inv-collect-MSlevel-sewer-b]![begin]+1) AS [inv-collect-year], [9-1-forecast-inv-collect-MSlevel-sewer-b].[begin-corrected], [9-1-forecast-inv-collect-MSlevel-sewer-b].end
-FROM [9-1-forecast-inv-collect-MSlevel-sewer-b] INNER JOIN [Reference-country] ON [9-1-forecast-inv-collect-MSlevel-sewer-b].cc = [Reference-country].cc
-ORDER BY [Reference-country].country;
+REQUETE: 9-1-forecast-inv-collect-MSlevel-sewer-c - SQL: SELECT [9-1-forecast-inv-collect-MSlevel-sewer-b].cc,
+ [9-1-forecast-inv-collect-MSlevel-sewer-b].soecPeriod,
+ [9-1-forecast-inv-collect-MSlevel-sewer-b]![SommeDesoecinvcol]/([9-1-forecast-inv-collect-MSlevel-sewer-b]![end]-[9-1-forecast-inv-collect-MSlevel-sewer-b]![begin]+1) AS [inv-collect-year],
+ [9-1-forecast-inv-collect-MSlevel-sewer-b].[begin],
+ [9-1-forecast-inv-collect-MSlevel-sewer-b].end
+FROM [9-1-forecast-inv-collect-MSlevel-sewer-b] 
+ORDER BY [9-1-forecast-inv-collect-MSlevel-sewer-b].cc;
 
-REQUETE: 9-2-forecast-inv-treat-MSlevel1-a - SQL: SELECT T_Art17_Investments.cc, T_Art17_Investments.soecinvtp AS treat, T_Art17_Investments.soecPeriod, T_Art17_Investments.soecStartYear, T_Art17_Investments.soecEndYear, IIf(Right([soecStartYear],12)>"-12-25T23:59",1,0) AS [start-correction]
+REQUETE: 9-1-forecast-inv-collect-MSlevel-p - SQL: SELECT [9-1-forecast-inv-collect-MSlevel-sewer-c].cc, 
+    [9-1-forecast-inv-collect-MSlevel-sewer-c].soecPeriod, 
+    iif([9-1-forecast-inv-collect-MSlevel-sewer-c].[inv-collect-year] IS NULL, 0, [9-1-forecast-inv-collect-MSlevel-sewer-c].[inv-collect-year]) as [inv-collect-year], 
+    iif([9-0-forecast-inv-collect-MSlevel-IAS-b].[Inv-IAS] IS NULL, 0, [9-0-forecast-inv-collect-MSlevel-IAS-b].[Inv-IAS]) as [Inv-IAS], 
+    Round([inv-collect-year] + [Inv-IAS], 1) AS [inv-tot], 
+    Round([inv-collect-year],1) & iif ([Inv-IAS] > 0, " (+IAS " & Round([Inv-IAS],1) &")", "") AS inv,
+    [9-1-forecast-inv-collect-MSlevel-sewer-c].[begin] & "-" & [9-1-forecast-inv-collect-MSlevel-sewer-c].end AS years
+FROM [9-1-forecast-inv-collect-MSlevel-sewer-c] 
+    LEFT JOIN [9-0-forecast-inv-collect-MSlevel-IAS-b] ON 
+        (([9-1-forecast-inv-collect-MSlevel-sewer-c].soecPeriod = [9-0-forecast-inv-collect-MSlevel-IAS-b].soecPeriod) AND 
+        ([9-1-forecast-inv-collect-MSlevel-sewer-c].cc = [9-0-forecast-inv-collect-MSlevel-IAS-b].cc))
+WHERE [9-1-forecast-inv-collect-MSlevel-sewer-c].soecPeriod = "P"
+ORDER BY [9-1-forecast-inv-collect-MSlevel-sewer-c].cc;
+
+REQUETE: 9-1-forecast-inv-collect-MSlevel-cu - SQL: SELECT [9-1-forecast-inv-collect-MSlevel-sewer-c].cc, 
+    [9-1-forecast-inv-collect-MSlevel-sewer-c].soecPeriod, 
+    iif([9-1-forecast-inv-collect-MSlevel-sewer-c].[inv-collect-year] IS NULL, 0, [9-1-forecast-inv-collect-MSlevel-sewer-c].[inv-collect-year]) as [inv-collect-year], 
+    iif([9-0-forecast-inv-collect-MSlevel-IAS-b].[Inv-IAS] IS NULL, 0, [9-0-forecast-inv-collect-MSlevel-IAS-b].[Inv-IAS]) as [Inv-IAS], 
+    Round([inv-collect-year] + [Inv-IAS], 1) AS [inv-tot], 
+    Round([inv-collect-year],1) & iif ([Inv-IAS] > 0, " (+IAS " & Round([Inv-IAS],1) &")", "") AS inv,
+    [9-1-forecast-inv-collect-MSlevel-sewer-c].[begin] & "-" & [9-1-forecast-inv-collect-MSlevel-sewer-c].end AS years
+FROM [9-1-forecast-inv-collect-MSlevel-sewer-c] 
+    LEFT JOIN [9-0-forecast-inv-collect-MSlevel-IAS-b] ON 
+        (([9-1-forecast-inv-collect-MSlevel-sewer-c].soecPeriod = [9-0-forecast-inv-collect-MSlevel-IAS-b].soecPeriod) AND 
+        ([9-1-forecast-inv-collect-MSlevel-sewer-c].cc = [9-0-forecast-inv-collect-MSlevel-IAS-b].cc))
+WHERE [9-1-forecast-inv-collect-MSlevel-sewer-c].soecPeriod = "CU"
+ORDER BY [9-1-forecast-inv-collect-MSlevel-sewer-c].cc;
+
+REQUETE: 9-1-forecast-inv-collect-MSlevel-exp - SQL: SELECT [9-1-forecast-inv-collect-MSlevel-sewer-c].cc, 
+    [9-1-forecast-inv-collect-MSlevel-sewer-c].soecPeriod, 
+    iif([9-1-forecast-inv-collect-MSlevel-sewer-c].[inv-collect-year] IS NULL, 0, [9-1-forecast-inv-collect-MSlevel-sewer-c].[inv-collect-year]) as [inv-collect-year], 
+    iif([9-0-forecast-inv-collect-MSlevel-IAS-b].[Inv-IAS] IS NULL, 0, [9-0-forecast-inv-collect-MSlevel-IAS-b].[Inv-IAS]) as [Inv-IAS], 
+    Round([inv-collect-year] + [Inv-IAS], 1) AS [inv-tot], 
+    Round([inv-collect-year],1) & iif ([Inv-IAS] > 0, " (+IAS " & Round([Inv-IAS],1) &")", "") AS inv,
+    [9-1-forecast-inv-collect-MSlevel-sewer-c].[begin] & "-" & [9-1-forecast-inv-collect-MSlevel-sewer-c].end AS years
+FROM [9-1-forecast-inv-collect-MSlevel-sewer-c] 
+    LEFT JOIN [9-0-forecast-inv-collect-MSlevel-IAS-b] ON 
+        (([9-1-forecast-inv-collect-MSlevel-sewer-c].soecPeriod = [9-0-forecast-inv-collect-MSlevel-IAS-b].soecPeriod) AND 
+        ([9-1-forecast-inv-collect-MSlevel-sewer-c].cc = [9-0-forecast-inv-collect-MSlevel-IAS-b].cc))
+WHERE [9-1-forecast-inv-collect-MSlevel-sewer-c].soecPeriod = "EXP"
+ORDER BY [9-1-forecast-inv-collect-MSlevel-sewer-c].cc;
+
+REQUETE: 9-2-forecast-inv-treat-MSlevel1-a - SQL: SELECT T_Art17_Investments.cc, 
+    T_Art17_Investments.soecinvtp AS treat,
+    T_Art17_Investments.soecPeriod,
+    T_Art17_Investments.soecStartYear,
+    T_Art17_Investments.soecEndYear,
+    IIf(Right([soecStartYear],12)>"-12-25T23:59",1,0) AS [start-correction]
 FROM T_Art17_Investments
 WHERE (((T_Art17_Investments.soecinvtp) Is Not Null))
 ORDER BY T_Art17_Investments.cc, T_Art17_Investments.soecPeriod;
 
-REQUETE: 9-2-forecast-inv-treat-MSlevel2-b - SQL: SELECT [9-2-forecast-inv-treat-MSlevel1-a].cc, Sum([9-2-forecast-inv-treat-MSlevel1-a].treat) AS SommeDetreat, [9-2-forecast-inv-treat-MSlevel1-a].soecPeriod, Min([9-2-forecast-inv-treat-MSlevel1-a].soecStartYear) AS MinDesoecStartYear, Max([9-2-forecast-inv-treat-MSlevel1-a].soecEndYear) AS MaxDesoecEndYear, Min(Year([soecStartYear])) AS [begin], Min(Year([soecStartYear])+[start-correction]) AS [begin-corrected], Max(Year([soecEndYear])) AS [end]
+REQUETE: 9-2-forecast-inv-treat-MSlevel2-b - SQL: SELECT [9-2-forecast-inv-treat-MSlevel1-a].cc,
+    Sum([9-2-forecast-inv-treat-MSlevel1-a].treat) AS SommeDetreat,
+    [9-2-forecast-inv-treat-MSlevel1-a].soecPeriod,
+    Min([9-2-forecast-inv-treat-MSlevel1-a].soecStartYear) AS MinDesoecStartYear,
+    Max([9-2-forecast-inv-treat-MSlevel1-a].soecEndYear) AS MaxDesoecEndYear,
+    Min(Year([soecStartYear])) AS [begin],
+    Min(Year([soecStartYear])+[start-correction]) AS [begin-corrected],
+    Max(Year([soecEndYear])) AS [end]
 FROM [9-2-forecast-inv-treat-MSlevel1-a]
 GROUP BY [9-2-forecast-inv-treat-MSlevel1-a].cc, [9-2-forecast-inv-treat-MSlevel1-a].soecPeriod;
 
-REQUETE: 9-2-forecast-inv-treat-MSlevel3-c - SQL: SELECT [Reference-country].country, [9-2-forecast-inv-treat-MSlevel2-b].soecPeriod, [9-2-forecast-inv-treat-MSlevel2-b]![SommeDetreat]/([9-2-forecast-inv-treat-MSlevel2-b]![end]-[9-2-forecast-inv-treat-MSlevel2-b]![begin]+1) AS [inv-treat-year], [9-2-forecast-inv-treat-MSlevel2-b].[begin-corrected], [9-2-forecast-inv-treat-MSlevel2-b].end
+REQUETE: 9-2-forecast-inv-treat-MSlevel3-c - SQL: SELECT [Reference-country].cc, [9-2-forecast-inv-treat-MSlevel2-b].soecPeriod, [9-2-forecast-inv-treat-MSlevel2-b]![SommeDetreat]/([9-2-forecast-inv-treat-MSlevel2-b]![end]-[9-2-forecast-inv-treat-MSlevel2-b]![begin]+1) AS [inv-treat-year], [9-2-forecast-inv-treat-MSlevel2-b].[begin-corrected], [9-2-forecast-inv-treat-MSlevel2-b].end
 FROM [Reference-country] INNER JOIN [9-2-forecast-inv-treat-MSlevel2-b] ON [Reference-country].cc = [9-2-forecast-inv-treat-MSlevel2-b].cc
-ORDER BY [Reference-country].country;
+ORDER BY [Reference-country].cc;
 
-REQUETE: 9-3-treat-capacity - SQL: SELECT [Reference-country].country, T_Art17_Investments.cc, Max(T_Art17_Investments.soeccapacity) AS MaxDesoeccapacity
+REQUETE: 9-2-forecast-inv-treat-MSlevel3-c-p - SQL: SELECT cc, soecPeriod, Round([inv-treat-year],1) as inv, [begin-corrected] & "-" & end as years
+FROM [9-2-forecast-inv-treat-MSlevel3-c]
+WHERE soecPeriod = "P";
+
+REQUETE: 9-2-forecast-inv-treat-MSlevel3-c-cu - SQL: SELECT cc, soecPeriod, Round([inv-treat-year],1) as inv, [begin-corrected] & "-" & end as years
+FROM [9-2-forecast-inv-treat-MSlevel3-c]
+WHERE soecPeriod = "CU";
+
+REQUETE: 9-2-forecast-inv-treat-MSlevel3-c-exp - SQL: SELECT cc, soecPeriod, Round([inv-treat-year],1) as inv, [begin-corrected] & "-" & end as years
+FROM [9-2-forecast-inv-treat-MSlevel3-c]
+WHERE soecPeriod = "EXP";
+
+REQUETE: 9-3-treat-capacity - SQL: SELECT T_Art17_Investments.cc, Max(T_Art17_Investments.soeccapacity) AS MaxDesoeccapacity
 FROM [Reference-country] RIGHT JOIN T_Art17_Investments ON [Reference-country].cc = T_Art17_Investments.cc
-GROUP BY [Reference-country].country, T_Art17_Investments.cc, T_Art17_Investments.soecPeriod
+GROUP BY [Reference-country].cc, T_Art17_Investments.cc, T_Art17_Investments.soecPeriod
 HAVING (((T_Art17_Investments.soecPeriod)="EXP"))
-ORDER BY [Reference-country].country;
+ORDER BY [Reference-country].cc;
 
-REQUETE: 9-4-art15-generated-IAS-DWT - SQL: SELECT [Reference-country].country, [T_Agglomerations].rptMStateKey, Sum([T_Agglomerations].aggGenerated) AS generated, Sum([aggC2]*[aggGenerated]/100) AS IAS, Sum([aggGenerated]*[aggPercWithoutTreatment]/100) AS [without treat]
+REQUETE: 9-4-art15-generated-IAS-DWT - SQL: SELECT [Reference-country].cc, [T_Agglomerations].rptMStateKey, Sum([T_Agglomerations].aggGenerated) AS generated, Sum([aggC2]*[aggGenerated]/100) AS IAS, Sum([aggGenerated]*[aggPercWithoutTreatment]/100) AS [without treat]
 FROM [T_Agglomerations] INNER JOIN [Reference-country] ON [T_Agglomerations].rptMStateKey = [Reference-country].cc
-GROUP BY [Reference-country].country, [T_Agglomerations].rptMStateKey
-ORDER BY [Reference-country].country;
+GROUP BY [Reference-country].cc, [T_Agglomerations].rptMStateKey
+ORDER BY [Reference-country].cc;
 
-REQUETE: 9-5-capacity-load - SQL: SELECT [Reference-country].country, T_UWWTPS.cc, Sum(T_UWWTPS.uwwCapacity) AS [design capacity], Sum(T_UWWTPS.uwwLoadEnteringUWWTP) AS load
+REQUETE: 9-5-capacity-load - SQL: SELECT [Reference-country].cc, Sum(T_UWWTPS.uwwCapacity) AS [design capacity], Sum(T_UWWTPS.uwwLoadEnteringUWWTP) AS load
 FROM [Reference-country] INNER JOIN T_UWWTPS ON [Reference-country].cc = T_UWWTPS.cc
-GROUP BY [Reference-country].country, T_UWWTPS.cc
-ORDER BY [Reference-country].country;
+GROUP BY [Reference-country].cc, T_UWWTPS.cc
+ORDER BY [Reference-country].cc;
 

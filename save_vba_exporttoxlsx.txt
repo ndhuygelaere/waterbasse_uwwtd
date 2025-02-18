@@ -1,0 +1,165 @@
+
+Option Compare Database
+Option Explicit
+
+
+Sub aaa_ExportDBToXlsx()
+    Dim annee As Integer
+        annee = 2022
+
+    Call ExportQueriesToExcel("C:\Temp\Article_17_EU-2022.xlsx", "article_17_synthesis_table", annee)
+End Sub
+
+
+Sub ExportQueriesToExcel(filePath As String, sheetName As String, targetYear As Integer)
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim xlApp As Object ' Excel.Application
+    Dim xlBook As Object ' Excel.Workbook
+    Dim xlSheet As Object ' Excel.Worksheet
+    Dim lastCol As Integer
+    Dim colIndex As Integer
+    Dim colName As String
+    Dim countryCode As String
+    Dim rowIndex As Integer
+    Dim found As Boolean
+    
+    ' Tableau de configuration : { Nom de la requête, Ligne dans Excel où insérer les résultats }
+    Dim queriesConfig As Variant
+    ' Pour chaque ligne du tableau queriesConfig:
+    '   nom de la requête
+    '   numero de ligne
+    '   nom du champ à inserer
+    'Array("7-agg-load-e-sewer", 20, ""),
+    'Array("7-agg-load-d-IAS", 21, ""),
+    
+    '=== need a split in order to have past, current year & expected values
+    queriesConfig = Array()
+    ReDim queriesConfig(32)
+    queriesConfig(0) = Array("7-agg-forecast-inv-d", 6, "SommeDeflaggInv")
+    queriesConfig(1) = Array("7-agg-forecast-inv-d", 7, "SommeDeflaggEUFund")
+    queriesConfig(2) = Array("7-agg-forecast-inv-d", 8, "years")
+    queriesConfig(3) = Array("8-uww-forecast-inv-d", 9, "SommeDeflatpInv")
+    queriesConfig(4) = Array("8-uww-forecast-inv-d", 10, "SommeDeflatpeufund")
+    queriesConfig(5) = Array("8-uww-forecast-inv-d", 11, "years")
+    queriesConfig(6) = Array("1-agg-EXP-b", 15, "CompteDeaggCode")
+    queriesConfig(7) = Array("2-agg-PD-a", 16, "CompteDeaggCode")
+    queriesConfig(8) = Array("3-uww-EXP-b", 17, "CompteDeuwwCode")
+    queriesConfig(9) = Array("4-uww-PD-a", 18, "CompteDeuwwCode")
+    queriesConfig(10) = Array("5-uww-load-b", 22, "SommeDeflatpExpLoad")
+    queriesConfig(11) = Array("6-uww-capacity-c", 23, "SommeDeflatpexpcapacity")
+    queriesConfig(12) = Array("9-1-forecast-inv-collect-MSlevel-p", 27, "inv")
+    queriesConfig(13) = Array("9-1-forecast-inv-collect-MSlevel-p", 28, "years")
+    queriesConfig(14) = Array("9-1-forecast-inv-collect-MSlevel-cu", 29, "inv")
+    queriesConfig(15) = Array("9-1-forecast-inv-collect-MSlevel-cu", 30, "years")
+    queriesConfig(16) = Array("9-1-forecast-inv-collect-MSlevel-exp", 31, "inv")
+    queriesConfig(17) = Array("9-1-forecast-inv-collect-MSlevel-exp", 32, "years")
+    queriesConfig(18) = Array("9-2-forecast-inv-treat-MSlevel3-c-p", 33, "inv")
+    queriesConfig(19) = Array("9-2-forecast-inv-treat-MSlevel3-c-p", 34, "years")
+    queriesConfig(20) = Array("9-2-forecast-inv-treat-MSlevel3-c-cu", 35, "inv")
+    queriesConfig(21) = Array("9-2-forecast-inv-treat-MSlevel3-c-cu", 36, "years")
+    queriesConfig(22) = Array("9-2-forecast-inv-treat-MSlevel3-c-exp", 37, "inv")
+    queriesConfig(23) = Array("9-2-forecast-inv-treat-MSlevel3-c-exp", 38, "years")
+    queriesConfig(24) = Array("9-5-capacity-load", 49, "design capacity")
+    queriesConfig(25) = Array("9-3-treat-capacity", 50, "MaxDesoeccapacity")
+    queriesConfig(26) = Array("9-4-art15-generated-IAS-DWT", 51, "generated")
+    queriesConfig(27) = Array("9-4-art15-generated-IAS-DWT", 52, "IAS")
+    queriesConfig(28) = Array("9-4-art15-generated-IAS-DWT", 53, "without treat")
+    queriesConfig(29) = Array("9-5-capacity-load", 54, "load")
+    queriesConfig(30) = Array("7-agg-load-c", 20, "SommeDeCollect")
+    queriesConfig(31) = Array("7-agg-load-c", 21, "SommeDeIAS")
+    queriesConfig(32) = Array("8-forecast-inv-period", 13, "period")
+    
+    ' Ouvrir la base de données
+    Set db = Application.CurrentDb
+    
+    ' Ouvrir Excel
+    On Error Resume Next
+    Set xlApp = GetObject(, "Excel.Application")
+    If Err.Number <> 0 Then
+        Set xlApp = CreateObject("Excel.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Ouvrir le classeur
+    Set xlBook = xlApp.Workbooks.Open(filePath)
+    Set xlSheet = xlBook.Sheets(sheetName)
+    
+    ' Trouver la dernière colonne utilisée
+    lastCol = xlSheet.Cells(2, xlSheet.Columns.Count).End(-4159).Column ' xlToLeft
+    
+    Debug.Print "lastCol: " & lastCol
+    
+    ' Boucle sur chaque requête de la configuration
+    Dim i As Integer
+    For i = LBound(queriesConfig) To UBound(queriesConfig)
+        Dim queryName As String
+        queryName = queriesConfig(i)(0)
+        rowIndex = queriesConfig(i)(1)
+        colName = queriesConfig(i)(2)
+        
+        Debug.Print queryName & " --> " & colName
+        
+        ' Ouvrir la requête
+        Set rs = db.OpenRecordset(queryName, dbOpenSnapshot)
+        
+        ' Vérifier si la requête retourne des données
+        If rs.EOF Then
+            MsgBox "La requête '" & queryName & "' ne retourne aucun résultat.", vbExclamation, "Aucune donnée"
+            rs.Close
+            Set rs = Nothing
+            GoTo NextQuery
+        End If
+        
+        ' Parcourir les résultats de la requête
+        Do Until rs.EOF
+            If Not rs.Fields("cc") Is Nothing Then
+                countryCode = UCase(rs.Fields("cc").Value) ' Lire le code pays
+                found = False
+                colIndex = 0
+                
+                ' Chercher la bonne colonne (Pays + Année)
+                Dim col As Integer
+                For col = 1 To lastCol
+                    If xlSheet.Cells(2, col).Value = countryCode And xlSheet.Cells(3, col).Value = targetYear Then
+                        colIndex = col
+                        found = True
+                        Exit For
+                    End If
+                Next col
+                
+                ' Insérer les valeurs si la colonne est trouvée
+                If found Then
+                    xlSheet.Cells(rowIndex, colIndex).Value = rs.Fields(colName).Value ' Insère la valeur (colonne 2 du recordset)
+                Else
+                    MsgBox "Pas de colonne pour " & countryCode & " en " & targetYear & " (requête : " & queryName & ")", vbExclamation, "Erreur"
+                End If
+            Else
+            
+            End If
+            rs.MoveNext
+        Loop
+        
+        ' Fermer le recordset
+        rs.Close
+        Set rs = Nothing
+        
+NextQuery:
+    Next i
+    
+    ' Enregistrer et fermer Excel
+    xlBook.Save
+    xlBook.Close False
+    xlApp.Quit
+    
+    ' Libérer les objets
+    Set db = Nothing
+    Set xlSheet = Nothing
+    Set xlBook = Nothing
+    Set xlApp = Nothing
+    
+    MsgBox "Export terminé avec succès !", vbInformation, "Succès"
+End Sub
+
+
+
