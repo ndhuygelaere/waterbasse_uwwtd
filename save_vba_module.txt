@@ -1,24 +1,43 @@
 Option Compare Database
 Option Explicit
 
+'Auteur n.dhuygelaere@gmail.com - Data Lime
+'date : 19/02/2025
+
+
 ' Variables globales
 Const EXPORT_FILE As String = "C:\Temp\DumpStructure.txt"
 
 Function WaterBaseMenu()
+    EnsureDirectoryExists folderPath:="C:\Temp"
+
     DoCmd.OpenForm "WaterBaseMenuForm"
 End Function
 
-
+'Ce menu permet de lancer l'import de la structure : tables + requêtes necessaires aux calculs des données pour l'art 17
+'Les structures sont importer dans la courante, qui doit être du format WaterBase fourni par l'EEA
 Sub createUWWTD_Art17_Structure()
-    Debug.Print "aaaa"
+    createStructure
+    MsgBox "Importation terminée dans " & db.Name, vbInformation
 End Sub
 
+'Ce menu permet l'export des données pour l'article 17 dans un fichier Excel de template
 Sub ExportUWWTD_Art17_DataToXLSX()
-    Debug.Print "Export"
+    Dim annee As Integer
+        annee = 2022
+        
+        'Amelioration possible, demander dans une message box, l'annee à exporter
+        'mais attention, cela suppose que l'année de la base access WaterBase soit bien la bonne et que le template d'export soit adapté
+        
+    exportToXlsx.ExportDBToXlsx annee:=annee
+    MsgBox "Export " & annee & " terminé avec succès !", vbInformation, "Succès"
 End Sub
 
 
-Sub aaa_export()
+'Ce menu permet l'export de la structure d'une base Access.
+'cette fonction a été utilisée pour la génération du 1er fichier d'export de la structure de la base. Le fichier a par la suite été modifié manuellement
+'Il est recommandé de ne pas écrasser le fichier de structure utilisé pour l'import
+Sub exportDBStructure()
     Debug.Print "start export"
     'ExportStructure
     'ExportTableData "Reference-country"
@@ -27,27 +46,30 @@ Sub aaa_export()
 End Sub
 
 
-
-Sub aaa_import()
+'Lancement de la fonction d'import de la structure
+Sub createStructure()
     Debug.Print "start import"
     Debug.Print Application.CurrentDb.Name
+    
+    'On supprime les structures déjà importées
+    removeImport
+    
     'Modification de la strucre de la base cible
     '= Ajouter la colonne "cc" de type texte de 2 caractères à la table "test"
-    'CurrentDb.Execute "ALTER TABLE T_Art17_FLAAgglomeration ADD COLUMN cc TEXT(2);"
-    'CurrentDb.Execute "ALTER TABLE T_Art17_FLAUWWTP ADD COLUMN cc TEXT(2);"
-    'CurrentDb.Execute "ALTER TABLE T_Art17_Investments ADD COLUMN cc TEXT(2);"
-    'CurrentDb.Execute "ALTER TABLE T_UWWTPS ADD COLUMN cc TEXT(2);"
+    CurrentDb.Execute "ALTER TABLE T_Art17_FLAAgglomeration ADD COLUMN cc TEXT(2);"
+    CurrentDb.Execute "ALTER TABLE T_Art17_FLAUWWTP ADD COLUMN cc TEXT(2);"
+    CurrentDb.Execute "ALTER TABLE T_Art17_Investments ADD COLUMN cc TEXT(2);"
+    CurrentDb.Execute "ALTER TABLE T_UWWTPS ADD COLUMN cc TEXT(2);"
     
     '= Mettre à jour la colonne "cc" avec les 2 premiers caractères en minuscule de la colonne "code"
-    'CurrentDb.Execute "UPDATE T_Art17_FLAAgglomeration SET cc = LCase(Left(aggCode, 2));"
-    'CurrentDb.Execute "UPDATE T_Art17_FLAUWWTP SET cc = LCase(Left(flarepCode, 2));"
-    'CurrentDb.Execute "UPDATE T_Art17_Investments SET cc = LCase(Left(soecCode, 2));"
-    'CurrentDb.Execute "UPDATE T_UWWTPS SET cc = LCase(Left(rptMStateKey, 2));"
+    CurrentDb.Execute "UPDATE T_Art17_FLAAgglomeration SET cc = LCase(Left(aggCode, 2));"
+    CurrentDb.Execute "UPDATE T_Art17_FLAUWWTP SET cc = LCase(Left(flarepCode, 2));"
+    CurrentDb.Execute "UPDATE T_Art17_Investments SET cc = LCase(Left(soecCode, 2));"
+    CurrentDb.Execute "UPDATE T_UWWTPS SET cc = LCase(Left(rptMStateKey, 2));"
     
     
     'Supprimer toutes les données importées
-    'SupprimerImportationsDepuisFichierAvecSQL cheminFichier:=EXPORT_FILE
-    'ImportStructure cheminFichier:=EXPORT_FILE
+    importStructure cheminFichier:=EXPORT_FILE
     ImportTableData cheminFichier:="C:\Temp\Reference-country_data.csv", nomTable:="Reference-country"
     
     
@@ -59,7 +81,7 @@ Sub aaa_import()
     
 End Sub
 
-Sub aaa_removeImport()
+Sub removeImport()
     Debug.Print "start remove"
     Debug.Print Application.CurrentDb.Name
 
@@ -68,9 +90,10 @@ Sub aaa_removeImport()
     SupprimerImportationsDepuisFichierAvecSQL cheminFichier:=EXPORT_FILE
     
     'Delete cc column
-    'CurrentDb.Execute "ALTER TABLE T_Art17_FLAAgglomeration DROP COLUMN cc;"
-    'CurrentDb.Execute "ALTER TABLE T_Art17_FLAUWWTP DROP COLUMN cc;"
-    'CurrentDb.Execute "ALTER TABLE T_Art17_Investments DROP COLUMN cc;"
+    DropColumnIfExists tableName:="T_Art17_FLAAgglomeration", columnName:="cc"
+    DropColumnIfExists tableName:="T_Art17_FLAUWWTP", columnName:="cc"
+    DropColumnIfExists tableName:="T_Art17_Investments", columnName:="cc"
+    DropColumnIfExists tableName:="T_UWWTPS", columnName:="cc"
     
     
     'Force the refresh of the navigation pane
@@ -80,6 +103,49 @@ Sub aaa_removeImport()
     Debug.Print "fin"
     
 End Sub
+
+'supprime une colonne d'une tabler si elle existe
+Function DropColumnIfExists(tableName As String, columnName As String)
+    Dim db As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim fld As DAO.Field
+    Dim columnExists As Boolean
+    
+    Set db = CurrentDb
+    columnExists = False
+    
+    ' Vérifier si la table existe
+    On Error Resume Next
+    Set tdf = db.TableDefs(tableName)
+    If Err.Number <> 0 Then
+        Debug.Print "La table " & tableName & " n'existe pas."
+        Exit Function
+    End If
+    On Error GoTo 0
+    
+    ' Vérifier si la colonne existe
+    For Each fld In tdf.Fields
+        If fld.Name = columnName Then
+            columnExists = True
+            Exit For
+        End If
+    Next fld
+    
+    ' Si la colonne existe, la supprimer
+    If columnExists Then
+        db.Execute "ALTER TABLE " & tableName & " DROP COLUMN " & columnName & ";", dbFailOnError
+        Debug.Print "La colonne " & columnName & " a été supprimée."
+    Else
+        Debug.Print "La colonne " & columnName & " n'existe pas dans la table " & tableName & "."
+    End If
+    
+    ' Libérer les objets
+    Set fld = Nothing
+    Set tdf = Nothing
+    Set db = Nothing
+End Function
+
+
 
 Public Sub ExportStructure()
     Dim db As DAO.Database
@@ -123,7 +189,7 @@ Public Sub ExportStructure()
     txtStream.WriteLine vbCrLf & "[Requêtes]"
     Dim qdf As DAO.QueryDef
     For Each qdf In db.QueryDefs
-        txtStream.WriteLine "REQUETE: " & qdf.Name & " - SQL: " & qdf.sql
+        txtStream.WriteLine "REQUETE: " & qdf.Name & " - SQL: " & qdf.SQL
     Next qdf
     
     txtStream.Close
@@ -150,7 +216,7 @@ Function FieldTypeToString(fieldType As Integer) As String
 End Function
 
 
-Public Sub ImportStructure(cheminFichier As String, Optional nomBase As String)
+Public Sub importStructure(cheminFichier As String, Optional nomBase As String)
     Dim db As DAO.Database
     Dim fso As Object
     Dim txtStream As Object
@@ -265,6 +331,7 @@ Public Sub ImportStructure(cheminFichier As String, Optional nomBase As String)
     'db.Close 'keep the db open
     
     Debug.Print "Importation terminée dans " & db.Name
+
 End Sub
 
 
@@ -552,6 +619,24 @@ Public Sub SupprimerImportationsDepuisFichierAvecSQL(cheminFichier As String, Op
     MsgBox "Suppression terminée des tables et requêtes listées dans '" & cheminFichier & "'.", vbInformation
 End Sub
 
+'Verifier que le répertoire existe et si non, le créer
+Function EnsureDirectoryExists(folderPath As String)
+    Dim fso As Object
+    
+    ' Créer un objet FileSystemObject
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' Vérifier si le dossier existe
+    If Not fso.FolderExists(folderPath) Then
+        fso.CreateFolder folderPath
+        Debug.Print "Le dossier " & folderPath & " a été créé."
+    Else
+        Debug.Print "Le dossier " & folderPath & " existe déjà."
+    End If
+    
+    ' Libérer l'objet
+    Set fso = Nothing
+End Function
 
 
 

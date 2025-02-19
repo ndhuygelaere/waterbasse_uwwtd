@@ -3,9 +3,7 @@ Option Compare Database
 Option Explicit
 
 
-Sub aaa_ExportDBToXlsx()
-    Dim annee As Integer
-        annee = 2022
+Sub ExportDBToXlsx(annee As Integer)
 
     Call ExportQueriesToExcel("C:\Temp\Article_17_EU-2022.xlsx", "article_17_synthesis_table", annee)
 End Sub
@@ -23,6 +21,7 @@ Sub ExportQueriesToExcel(filePath As String, sheetName As String, targetYear As 
     Dim countryCode As String
     Dim rowIndex As Integer
     Dim found As Boolean
+    Dim valToInsert As Variant
     
     ' Tableau de configuration : { Nom de la requête, Ligne dans Excel où insérer les résultats }
     Dim queriesConfig As Variant
@@ -35,7 +34,7 @@ Sub ExportQueriesToExcel(filePath As String, sheetName As String, targetYear As 
     
     '=== need a split in order to have past, current year & expected values
     queriesConfig = Array()
-    ReDim queriesConfig(32)
+    ReDim queriesConfig(35)
     queriesConfig(0) = Array("7-agg-forecast-inv-d", 6, "SommeDeflaggInv")
     queriesConfig(1) = Array("7-agg-forecast-inv-d", 7, "SommeDeflaggEUFund")
     queriesConfig(2) = Array("7-agg-forecast-inv-d", 8, "years")
@@ -69,6 +68,9 @@ Sub ExportQueriesToExcel(filePath As String, sheetName As String, targetYear As 
     queriesConfig(30) = Array("7-agg-load-c", 20, "SommeDeCollect")
     queriesConfig(31) = Array("7-agg-load-c", 21, "SommeDeIAS")
     queriesConfig(32) = Array("8-forecast-inv-period", 13, "period")
+    queriesConfig(33) = Array("9-2-inv-evol", 39, "cup")
+    queriesConfig(34) = Array("9-2-inv-evol", 40, "expcu")
+    queriesConfig(35) = Array("9-2-inv-evol", 41, "expcu_pc")
     
     ' Ouvrir la base de données
     Set db = Application.CurrentDb
@@ -130,7 +132,17 @@ Sub ExportQueriesToExcel(filePath As String, sheetName As String, targetYear As 
                 
                 ' Insérer les valeurs si la colonne est trouvée
                 If found Then
-                    xlSheet.Cells(rowIndex, colIndex).Value = rs.Fields(colName).Value ' Insère la valeur (colonne 2 du recordset)
+                    If IsNull(rs.Fields(colName).Value) Then
+                        valToInsert = "no data"
+                    Else
+                        valToInsert = Trim(rs.Fields(colName).Value)
+                        If valToInsert = "" Or valToInsert = "-" Then
+                            valToInsert = "no data"
+                        Else
+                            valToInsert = Replace(valToInsert, ",", ".")
+                        End If
+                    End If
+                    xlSheet.Cells(rowIndex, colIndex).Value = valToInsert ' Insère la valeur
                 Else
                     MsgBox "Pas de colonne pour " & countryCode & " en " & targetYear & " (requête : " & queryName & ")", vbExclamation, "Erreur"
                 End If
@@ -158,8 +170,10 @@ NextQuery:
     Set xlBook = Nothing
     Set xlApp = Nothing
     
-    MsgBox "Export terminé avec succès !", vbInformation, "Succès"
+    Debug.Print "Export terminé avec succès !"
 End Sub
+
+
 
 
 
