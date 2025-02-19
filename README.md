@@ -39,4 +39,8 @@ You can also consult : https://support.microsoft.com/fr-fr/office/activer-ou-d%C
 # Main functions
 ## Créer la structure pour Art 17
 
+This function will alter the structure of the current database and will create tables and requests describe in the C:\Temp\DumpStructure.txt file
+
 ## Export Art 17 vers .xlsx
+
+This function will export data provided by new access request in the  C:\Temp\Article_17_EU-2022.xlsx file
