@@ -8,7 +8,7 @@ TABLE: Reference-country
 [Requêtes]
 REQUETE: 1-agg-EXP-a - SQL: SELECT [T_Art17_FLAAgglomeration].cc, [T_Art17_FLAAgglomeration].aggCode, [T_Art17_FLAAgglomeration].flaggStatus, [T_Art17_FLAAgglomeration].flaggExpecDateStartWork, [T_Art17_FLAAgglomeration].flaggExpecDateCompletion, [T_Art17_FLAAgglomeration].flaggInv, [T_Art17_FLAAgglomeration].flaggEUFund
 FROM T_Art17_FLAAgglomeration
-WHERE ( (([T_Art17_FLAAgglomeration].flaggStatus)<>"PD" And ([T_Art17_FLAAgglomeration].flaggStatus)<>"C") AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork)>#12/31/2022#) AND (([T_Art17_FLAAgglomeration].flaggExpecDateCompletion)>#12/31/2022#)) OR ( (([T_Art17_FLAAgglomeration].flaggStatus)<>"PD" And ([T_Art17_FLAAgglomeration].flaggStatus)<>"C") AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork)>#12/31/2022#) AND (([T_Art17_FLAAgglomeration].flaggExpecDateCompletion) Is Null)) OR ( (([T_Art17_FLAAgglomeration].flaggStatus)<>"PD" And ([T_Art17_FLAAgglomeration].flaggStatus)<>"C") AND (([T_Art17_FLAAgglomeration].flaggExpecDateCompletion)>#12/31/2022#))
+WHERE ( (([T_Art17_FLAAgglomeration].flaggStatus)<>"PD" And ([T_Art17_FLAAgglomeration].flaggStatus)<>"C") AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork)>#12/31/2024#) AND (([T_Art17_FLAAgglomeration].flaggExpecDateCompletion)>#12/31/2024#)) OR ( (([T_Art17_FLAAgglomeration].flaggStatus)<>"PD" And ([T_Art17_FLAAgglomeration].flaggStatus)<>"C") AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork)>#12/31/2024#) AND (([T_Art17_FLAAgglomeration].flaggExpecDateCompletion) Is Null)) OR ( (([T_Art17_FLAAgglomeration].flaggStatus)<>"PD" And ([T_Art17_FLAAgglomeration].flaggStatus)<>"C") AND (([T_Art17_FLAAgglomeration].flaggExpecDateCompletion)>#12/31/2024#))
 ORDER BY [T_Art17_FLAAgglomeration].cc;
 
 REQUETE: 1-agg-EXP-b - SQL: SELECT [Reference-country].cc, Count([1-agg-EXP-a].aggCode) AS CompteDeaggCode, Min([1-agg-EXP-a].flaggExpecDateCompletion) AS MinDeflaggExpecDateCompletion, Max([1-agg-EXP-a].flaggExpecDateCompletion) AS MaxDeflaggExpecDateCompletion
@@ -29,7 +29,7 @@ ORDER BY [T_Art17_FLAAgglomeration].cc;
 
 REQUETE: 3-uww-EXP-a - SQL: SELECT uww17.cc, uww17.uwwCode, uww17.uwwName, uww17.flatpStatus, uww17.flatpExpecDatePerformance, uww17.flatpInv, uww17.flatpeufund
 FROM T_Art17_FLAUWWTP uww17
-WHERE (((uww17.flatpStatus)<>"PD" And (uww17.flatpStatus)<>"C") AND ((uww17.flatpExpecDatePerformance)>#12/31/2022#))
+WHERE (((uww17.flatpStatus)<>"PD" And (uww17.flatpStatus)<>"C") AND ((uww17.flatpExpecDatePerformance)>#12/31/2024#))
 ORDER BY uww17.cc;
 
 REQUETE: 3-uww-EXP-b - SQL: SELECT  [Reference-country].cc, 
@@ -57,7 +57,7 @@ ORDER BY [Reference-country].cc;
 
 REQUETE: 5-uww-load-a - SQL: SELECT uww17.flatpStatus, uww17.cc, uww17.flatpExpLoad, uww17.flatpExpecDatePerformance
 FROM T_Art17_FLAUWWTP uww17
-WHERE ( ((uww17.flatpStatus)<>"C") AND ((uww17.flatpExpecDatePerformance)>#12/31/2022#))
+WHERE ( ((uww17.flatpStatus)<>"C") AND ((uww17.flatpExpecDatePerformance)>#12/31/2024#))
 ORDER BY uww17.cc;
 
 REQUETE: 5-uww-load-b - SQL: SELECT [Reference-country].cc, Sum([5-uww-load-a].flatpExpLoad) AS SommeDeflatpExpLoad
@@ -67,7 +67,7 @@ ORDER BY [Reference-country].cc;
 
 REQUETE: 6-uww-capacity-a - SQL: SELECT uww17.uwwCode, uww17.flatpStatus, uww17.cc, uww17.flatpexpcapacity, uww17.flatpExpecDatePerformance
 FROM T_Art17_FLAUWWTP uww17
-WHERE (((uww17.flatpStatus)<>"C") AND ((uww17.flatpExpecDatePerformance)>#12/31/2022#));
+WHERE (((uww17.flatpStatus)<>"C") AND ((uww17.flatpExpecDatePerformance)>#12/31/2024#));
 
 REQUETE: 6-uww-capacity-b - SQL: SELECT [6-uww-capacity-a].uwwCode, [6-uww-capacity-a].cc, [6-uww-capacity-a].flatpexpcapacity, [6-uww-capacity-a].flatpExpecDatePerformance
 FROM [6-uww-capacity-a]
@@ -86,7 +86,7 @@ REQUETE: 7-agg-forecast-inv-a - SQL: SELECT [T_Art17_FLAAgglomeration].flaggStat
     [T_Art17_FLAAgglomeration].flaggExpecDateStartWork, 
     [T_Art17_FLAAgglomeration].flaggExpecDateCompletion
 FROM T_Art17_FLAAgglomeration
-WHERE [T_Art17_FLAAgglomeration].flaggStatus <> "C" AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateStartWork) >= 2023) OR ([T_Art17_FLAAgglomeration].flaggExpecDateCompletion Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateCompletion) >= 2023));
+WHERE [T_Art17_FLAAgglomeration].flaggStatus <> "C" AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateStartWork) > 2024) OR ([T_Art17_FLAAgglomeration].flaggExpecDateCompletion Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateCompletion) > 2024));
 
 REQUETE: 7-agg-forecast-inv-b - SQL: SELECT [7-agg-forecast-inv-a].cc, Sum([7-agg-forecast-inv-a].flaggInv) AS SommeDeflaggInv, Sum([7-agg-forecast-inv-a].flaggEUFund) AS SommeDeflaggEUFund, Min(Year([flaggExpecDateCompletion])) AS Minyear, Max(Year([flaggExpecDateCompletion])) AS Maxyear, Min(Year([flaggExpecDateStartWork])) AS [Minyear-startw], Max(Year([flaggExpecDateStartWork])) AS [Maxyear-startw]
 FROM [7-agg-forecast-inv-a]
@@ -127,7 +127,7 @@ GROUP BY [Reference-country].cc;
 
 REQUETE: 8-uww-forecast-inv-a - SQL: SELECT uww17.flatpStatus, uww17.cc, uww17.uwwCode, uww17.uwwName, uww17.flatpStatus, uww17.flatpExpecDatePerformance, uww17.flatpInv, uww17.flatpeufund
 FROM T_Art17_FLAUWWTP uww17
-WHERE uww17.flatpStatus <> "C" AND uww17.flatpExpecDatePerformance IS NOT NULL AND Year(uww17.flatpExpecDatePerformance) >= 2023
+WHERE uww17.flatpStatus <> "C" AND uww17.flatpExpecDatePerformance IS NOT NULL AND Year(uww17.flatpExpecDatePerformance) > 2024
 ORDER BY uww17.flatpExpecDatePerformance
 
 REQUETE: 8-uww-forecast-inv-b - SQL: SELECT [8-uww-forecast-inv-a].cc, Sum([8-uww-forecast-inv-a].flatpInv) AS SommeDeflatpInv, Sum([8-uww-forecast-inv-a].flatpeufund) AS SommeDeflatpeufund, Min(Year([flatpExpecDatePerformance])) AS Minyear, Max(Year([flatpExpecDatePerformance])) AS Maxyear
