@@ -86,7 +86,7 @@ REQUETE: 7-agg-forecast-inv-a - SQL: SELECT [T_Art17_FLAAgglomeration].flaggStat
     [T_Art17_FLAAgglomeration].flaggExpecDateStartWork, 
     [T_Art17_FLAAgglomeration].flaggExpecDateCompletion
 FROM T_Art17_FLAAgglomeration
-WHERE [T_Art17_FLAAgglomeration].flaggStatus <> "C" AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateStartWork) > 2023) OR ([T_Art17_FLAAgglomeration].flaggExpecDateCompletion Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateCompletion) > 2023));
+WHERE [T_Art17_FLAAgglomeration].flaggStatus <> "C" AND (([T_Art17_FLAAgglomeration].flaggExpecDateStartWork Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateStartWork) >= 2023) OR ([T_Art17_FLAAgglomeration].flaggExpecDateCompletion Is Not Null AND Year([T_Art17_FLAAgglomeration].flaggExpecDateCompletion) >= 2023));
 
 REQUETE: 7-agg-forecast-inv-b - SQL: SELECT [7-agg-forecast-inv-a].cc, Sum([7-agg-forecast-inv-a].flaggInv) AS SommeDeflaggInv, Sum([7-agg-forecast-inv-a].flaggEUFund) AS SommeDeflaggEUFund, Min(Year([flaggExpecDateCompletion])) AS Minyear, Max(Year([flaggExpecDateCompletion])) AS Maxyear, Min(Year([flaggExpecDateStartWork])) AS [Minyear-startw], Max(Year([flaggExpecDateStartWork])) AS [Maxyear-startw]
 FROM [7-agg-forecast-inv-a]
@@ -127,7 +127,7 @@ GROUP BY [Reference-country].cc;
 
 REQUETE: 8-uww-forecast-inv-a - SQL: SELECT uww17.flatpStatus, uww17.cc, uww17.uwwCode, uww17.uwwName, uww17.flatpStatus, uww17.flatpExpecDatePerformance, uww17.flatpInv, uww17.flatpeufund
 FROM T_Art17_FLAUWWTP uww17
-WHERE uww17.flatpStatus <> "C" AND uww17.flatpExpecDatePerformance IS NOT NULL AND Year(uww17.flatpExpecDatePerformance) > 2023
+WHERE uww17.flatpStatus <> "C" AND uww17.flatpExpecDatePerformance IS NOT NULL AND Year(uww17.flatpExpecDatePerformance) >= 2023
 ORDER BY uww17.flatpExpecDatePerformance
 
 REQUETE: 8-uww-forecast-inv-b - SQL: SELECT [8-uww-forecast-inv-a].cc, Sum([8-uww-forecast-inv-a].flatpInv) AS SommeDeflatpInv, Sum([8-uww-forecast-inv-a].flatpeufund) AS SommeDeflatpeufund, Min(Year([flatpExpecDatePerformance])) AS Minyear, Max(Year([flatpExpecDatePerformance])) AS Maxyear
