@@ -68,8 +68,8 @@ Sub ExportQueriesToExcel(filePath As String, sheetName As String, targetYear As 
     queriesConfig(30) = Array("7-agg-load-c", 20, "SommeDeCollect")
     queriesConfig(31) = Array("7-agg-load-c", 21, "SommeDeIAS")
     queriesConfig(32) = Array("8-forecast-inv-period", 13, "period")
-    queriesConfig(33) = Array("9-2-inv-evol", 39, "cup")
-    queriesConfig(34) = Array("9-2-inv-evol", 40, "expcu")
+    'queriesConfig(33) = Array("9-2-inv-evol", 39, "cup") '===en fait il faut faire la somme de la ligne 29 et 35 ==> remplacer par une formule
+    ' queriesConfig(34) = Array("9-2-inv-evol", 40, "expcu") ' priori idem que ligne 34
     queriesConfig(35) = Array("9-2-inv-evol", 41, "expcu_pc")
     
     ' Ouvrir la base de données
@@ -172,6 +172,7 @@ NextQuery:
     
     Debug.Print "Export terminé avec succès !"
 End Sub
+
 
 
 
