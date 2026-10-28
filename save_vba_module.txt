@@ -18,13 +18,13 @@ End Function
 'Les structures sont importer dans la courante, qui doit être du format WaterBase fourni par l'EEA
 Sub createUWWTD_Art17_Structure()
     createStructure
-    MsgBox "Importation terminée dans " & db.Name, vbInformation
+    MsgBox "Importation terminée dans " & Application.CurrentDb.Name, vbInformation
 End Sub
 
 'Ce menu permet l'export des données pour l'article 17 dans un fichier Excel de template
 Sub ExportUWWTD_Art17_DataToXLSX()
     Dim annee As Integer
-        annee = 2022
+        annee = 2024
         
         'Amelioration possible, demander dans une message box, l'annee à exporter
         'mais attention, cela suppose que l'année de la base access WaterBase soit bien la bonne et que le template d'export soit adapté

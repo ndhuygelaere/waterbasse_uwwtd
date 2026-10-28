@@ -34,7 +34,7 @@ Sub ExportQueriesToExcel(filePath As String, sheetName As String, targetYear As 
     
     '=== need a split in order to have past, current year & expected values
     queriesConfig = Array()
-    ReDim queriesConfig(35)
+    ReDim queriesConfig(33)
     queriesConfig(0) = Array("7-agg-forecast-inv-d", 6, "SommeDeflaggInv")
     queriesConfig(1) = Array("7-agg-forecast-inv-d", 7, "SommeDeflaggEUFund")
     queriesConfig(2) = Array("7-agg-forecast-inv-d", 8, "years")
@@ -68,9 +68,9 @@ Sub ExportQueriesToExcel(filePath As String, sheetName As String, targetYear As 
     queriesConfig(30) = Array("7-agg-load-c", 20, "SommeDeCollect")
     queriesConfig(31) = Array("7-agg-load-c", 21, "SommeDeIAS")
     queriesConfig(32) = Array("8-forecast-inv-period", 13, "period")
-    'queriesConfig(33) = Array("9-2-inv-evol", 39, "cup") '===en fait il faut faire la somme de la ligne 29 et 35 ==> remplacer par une formule
-    ' queriesConfig(34) = Array("9-2-inv-evol", 40, "expcu") ' priori idem que ligne 34
-    queriesConfig(35) = Array("9-2-inv-evol", 41, "expcu_pc")
+    queriesConfig(33) = Array("9-2-inv-evol", 41, "expcu_pc")
+    'queriesConfig(34) = Array("9-2-inv-evol", 39, "cup") '===en fait il faut faire la somme de la ligne 29 et 35 ==> remplacer par une formule
+    ' queriesConfig(35) = Array("9-2-inv-evol", 40, "expcu") ' priori idem que ligne 34
     
     ' Ouvrir la base de données
     Set db = Application.CurrentDb
